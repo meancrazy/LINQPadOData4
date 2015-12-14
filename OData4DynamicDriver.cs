@@ -44,7 +44,7 @@ namespace OData4
             return cxInfo.DatabaseInfo.Server;
         }
 
-        public override Version Version => new Version("1.0.0.0");
+        public override Version Version => new Version("1.0.1.0");
 
         public override ParameterDescriptor[] GetContextConstructorParameters(IConnectionInfo cxInfo)
         {
@@ -283,10 +283,17 @@ namespace OData4
         public override void InitializeContext(IConnectionInfo cxInfo, object context, QueryExecutionManager executionManager)
         {
             var dsContext = (DataServiceContext)context;
-
+            
             // The next step is to feed any supplied credentials into the Astoria service.
             // (This could be enhanced to support other authentication modes, too).
             dsContext.Credentials = GetCredentials(cxInfo);
+
+            dsContext.Configurations.RequestPipeline.OnMessageCreating += args =>
+                {
+                    
+                    var message = new CustomizedRequestMessage(args);
+                    return message;
+                };
 
             // Finally, we handle the SendingRequest event so that it writes the request text to the SQL translation window:
             dsContext.SendingRequest2 += (s, e) => executionManager.SqlTranslationWriter.WriteLine(e.RequestMessage.Url);

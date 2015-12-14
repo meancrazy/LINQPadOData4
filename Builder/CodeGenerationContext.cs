@@ -144,24 +144,13 @@ namespace OData4.Builder
             }
         }
 
-        /// <summary>
-        /// The func for user code to overwrite and provide referenced model's XmlReader.
-        /// </summary>
-        public Func<Uri, XmlReader> GetReferencedModelReaderFunc
-        {
-            get { return _getReferencedModelReaderFunc; }
-            set { _getReferencedModelReaderFunc = value; }
-        }
+        /// <summary> The func for user code to overwrite and provide referenced model's XmlReader. </summary>
+        private readonly Func<Uri, XmlReader> _getReferencedModelReaderFunc = uri => XmlReader.Create(GetEdmxStreamFromUri(uri), Settings);
 
         /// <summary>
         /// Basic setting for XmlReader.
         /// </summary>
         private static readonly XmlReaderSettings Settings = new XmlReaderSettings { IgnoreWhitespace = true };
-
-        /// <summary>
-        /// The func for user code to overwrite and provide referenced model's XmlReader.
-        /// </summary>
-        private Func<Uri, XmlReader> _getReferencedModelReaderFunc = uri => XmlReader.Create(GetEdmxStreamFromUri(uri), Settings);
 
         /// <summary>
         /// The Wrapper func for user code to overwrite and provide referenced model's stream.
@@ -172,7 +161,7 @@ namespace OData4.Builder
             {
                 return uri =>
                 {
-                    using (var reader = GetReferencedModelReaderFunc(uri))
+                    using (var reader = _getReferencedModelReaderFunc(uri))
                     {
                         if (reader == null)
                         {
@@ -473,6 +462,7 @@ namespace OData4.Builder
                 try
                 {
                     var webRequest = (HttpWebRequest)WebRequest.Create(metadataUri);
+                    webRequest.Proxy = LINQPad.Util.GetWebProxy();
                     var webResponse = webRequest.GetResponse();
                     metadataStream = webResponse.GetResponseStream();
                 }
