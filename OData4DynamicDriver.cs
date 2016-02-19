@@ -44,7 +44,7 @@ namespace OData4
             return cxInfo.DatabaseInfo.Server;
         }
 
-        public override Version Version => new Version("1.0.1.0");
+        public override Version Version => new Version("1.0.2.0");
 
         public override ParameterDescriptor[] GetContextConstructorParameters(IConnectionInfo cxInfo)
         {
@@ -145,7 +145,16 @@ namespace OData4
             };
 
             var metadataUri = context.GetMetadataUri();
-            using (var reader = XmlReader.Create(metadataUri.ToString()))
+
+            var settings = new XmlReaderSettings
+            {
+                XmlResolver = new XmlSecureResolver(new XmlUrlResolver(), metadataUri.ToString())
+                {
+                    Credentials = GetCredentials(cxInfo)
+                }
+            };
+
+            using (var reader = XmlReader.Create(metadataUri.ToString(), settings))
             {
                 model = EdmxReader.Parse(reader);
             }
