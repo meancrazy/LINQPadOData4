@@ -463,6 +463,8 @@ namespace OData4.Builder
                 {
                     var webRequest = (HttpWebRequest)WebRequest.Create(metadataUri);
                     webRequest.Proxy = LINQPad.Util.GetWebProxy();
+                    webRequest.Credentials = CredentialCache.DefaultCredentials;
+
                     var webResponse = webRequest.GetResponse();
                     metadataStream = webResponse.GetResponseStream();
                 }
