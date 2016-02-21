@@ -1,3 +1,5 @@
+using System.Net;
+
 namespace OData4.Builder
 {
     public class Configuration
@@ -22,10 +24,16 @@ namespace OData4.Builder
         // the client code if any. The value must be set to true or false.
         public bool IgnoreUnexpectedElementsAndAttributes => true;
 
-        public Configuration(string uri, string namespacePrefix)
+        public ICredentials Credentials { get; }
+
+        public IWebProxy WebProxy { get; }
+
+        public Configuration(string uri, string namespacePrefix, ICredentials credentials, IWebProxy webProxy)
         {
             MetadataDocumentUri = uri;
             NamespacePrefix = namespacePrefix;
+            Credentials = credentials;
+            WebProxy = webProxy;
         }
     }
 }

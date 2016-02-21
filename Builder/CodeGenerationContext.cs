@@ -87,7 +87,9 @@ namespace OData4.Builder
         /// <param name="namespacePrefix">The namespacePrefix is used as the only namespace in generated code
         /// when there's only one schema in edm model, and as a prefix for the namespace from the model with multiple
         /// schemas. If this argument is null, the namespaces from the model are used for all types.</param>
-        public CodeGenerationContext(Uri metadataUri, string namespacePrefix) : this(GetEdmxStringFromMetadataPath(metadataUri), namespacePrefix)
+        /// <param name="credentials"></param>
+        /// <param name="webProxy"></param>
+        public CodeGenerationContext(Uri metadataUri, string namespacePrefix, ICredentials credentials, IWebProxy webProxy) : this(GetEdmxStringFromMetadataPath(metadataUri, credentials, webProxy), namespacePrefix, credentials, webProxy)
         {
         }
 
@@ -98,10 +100,14 @@ namespace OData4.Builder
         /// <param name="namespacePrefix">The namespacePrefix is used as the only namespace in generated code
         /// when there's only one schema in edm model, and as a prefix for the namespace from the model with multiple
         /// schemas. If this argument is null, the namespaces from the model are used for all types.</param>
-        private CodeGenerationContext(string edmx, string namespacePrefix)
+        /// <param name="credentials"></param>
+        /// <param name="webProxy"></param>
+        private CodeGenerationContext(string edmx, string namespacePrefix, ICredentials credentials, IWebProxy webProxy)
         {
             Edmx = XElement.Parse(edmx);
             _namespacePrefix = namespacePrefix;
+            _credentials = credentials;
+            _webProxy = webProxy;
         }
 
         /// <summary> The EdmModel to generate code for. </summary>
@@ -121,7 +127,7 @@ namespace OData4.Builder
                     IEnumerable<EdmError> errors;
                     var edmxReaderSettings = new EdmxReaderSettings
                     {
-                        GetReferencedModelReaderFunc = GetReferencedModelReaderFuncWrapper,
+                        GetReferencedModelReaderFunc = uri => GetReferencedModelReaderFuncWrapper(uri, _credentials, _webProxy),
                         IgnoreUnexpectedAttributesAndElements = IgnoreUnexpectedElementsAndAttributes
                     };
 
@@ -145,7 +151,7 @@ namespace OData4.Builder
         }
 
         /// <summary> The func for user code to overwrite and provide referenced model's XmlReader. </summary>
-        private readonly Func<Uri, XmlReader> _getReferencedModelReaderFunc = uri => XmlReader.Create(GetEdmxStreamFromUri(uri), Settings);
+        private readonly Func<Uri, ICredentials, IWebProxy, XmlReader> _getReferencedModelReaderFunc = (uri, credentials, webProxy) => XmlReader.Create(GetEdmxStreamFromUri(uri, credentials, webProxy), Settings);
 
         /// <summary>
         /// Basic setting for XmlReader.
@@ -155,13 +161,13 @@ namespace OData4.Builder
         /// <summary>
         /// The Wrapper func for user code to overwrite and provide referenced model's stream.
         /// </summary>
-        public Func<Uri, XmlReader> GetReferencedModelReaderFuncWrapper
+        public Func<Uri, ICredentials, IWebProxy, XmlReader> GetReferencedModelReaderFuncWrapper
         {
             get
             {
-                return uri =>
+                return (uri, credentials, webProxy) =>
                 {
-                    using (var reader = _getReferencedModelReaderFunc(uri))
+                    using (var reader = _getReferencedModelReaderFunc(uri, credentials, webProxy))
                     {
                         if (reader == null)
                         {
@@ -184,11 +190,7 @@ namespace OData4.Builder
         /// <summary>
         /// Dictionary that stores uri and referenced xml mapping.
         /// </summary>
-        public Dictionary<Uri, XElement> ReferencesMap
-        {
-            get;
-            set;
-        }
+        public Dictionary<Uri, XElement> ReferencesMap { get; set; }
 
         /// <summary>
         /// The array of namespaces in the current edm model.
@@ -274,11 +276,8 @@ namespace OData4.Builder
                     }
                     else if (EnableNamingAlias)
                     {
-                        _namespaceMap = NamespacesInModel
-                            .Distinct()
-                            .ToDictionary(
-                                ns => ns,
-                                ns => Customization.CustomizeNamespace(ns));
+                        _namespaceMap = NamespacesInModel.Distinct()
+                                                         .ToDictionary(ns => ns, Customization.CustomizeNamespace);
                     }
                     else
                     {
@@ -293,34 +292,26 @@ namespace OData4.Builder
         /// <summary>
         /// true to use DataServiceCollection in the generated code, false otherwise.
         /// </summary>
-        public bool UseDataServiceCollection
-        {
-            get;
-            set;
-        }
+        public bool UseDataServiceCollection { get; set; }
 
         /// <summary>
         /// true to use Upper camel case for all class and property names, false otherwise.
         /// </summary>
-        public bool EnableNamingAlias
-        {
-            get;
-            set;
-        }
+        public bool EnableNamingAlias { get; set; }
 
         /// <summary>
         /// true to ignore unknown elements or attributes in metadata, false otherwise.
         /// </summary>
-        public bool IgnoreUnexpectedElementsAndAttributes
-        {
-            get;
-            set;
-        }
+        public bool IgnoreUnexpectedElementsAndAttributes { private get; set; }
 
         /// <summary>
         /// Maps the element type of an entity set to the entity set.
         /// </summary>
         public Dictionary<IEdmEntityType, List<IEdmNavigationSource>> ElementTypeToNavigationSourceMap => _elementTypeToNavigationSourceMap ?? (_elementTypeToNavigationSourceMap = new Dictionary<IEdmEntityType, List<IEdmNavigationSource>>(EqualityComparer<IEdmEntityType>.Default));
+        
+        private readonly ICredentials _credentials;
+        
+        private readonly IWebProxy _webProxy;
 
         /// <summary>
         /// true if this EntityContainer need to set the UrlConvention to KeyAsSegment, false otherwise.
@@ -370,6 +361,7 @@ namespace OData4.Builder
         /// <param name="schemaElement">The schema element to get the full name for.</param>
         /// <param name="schemaElementFixedName">The fixed name of this schemaElement.</param>
         /// <param name="template">The current code generate template.</param>
+        /// <param name="needGlobalPrefix"></param>
         /// <returns>The namespace qualified name for the given <paramref name="schemaElement"/> with the namespace prefix applied if this.NamespacePrefix is specified.</returns>
         public string GetPrefixedFullName(IEdmSchemaElement schemaElement, string schemaElementFixedName, ODataClientTemplate template, bool needGlobalPrefix = true)
         {
@@ -434,10 +426,12 @@ namespace OData4.Builder
         /// Reads the edmx string from a file path or a http/https path.
         /// </summary>
         /// <param name="metadataUri">The Uri to the metadata document. The supported scheme are File, http and https.</param>
-        private static string GetEdmxStringFromMetadataPath(Uri metadataUri)
+        /// <param name="credentials"></param>
+        /// <param name="webProxy"></param>
+        private static string GetEdmxStringFromMetadataPath(Uri metadataUri, ICredentials credentials, IWebProxy webProxy)
         {
-            string content = null;
-            using (var streamReader = new StreamReader(GetEdmxStreamFromUri(metadataUri)))
+            string content;
+            using (var streamReader = new StreamReader(GetEdmxStreamFromUri(metadataUri, credentials, webProxy)))
             {
                 content = streamReader.ReadToEnd();
             }
@@ -449,7 +443,9 @@ namespace OData4.Builder
         /// Get the metadata stream from a file path or a http/https path.
         /// </summary>
         /// <param name="metadataUri">The Uri to the stream. The supported scheme are File, http and https.</param>
-        private static Stream GetEdmxStreamFromUri(Uri metadataUri)
+        /// <param name="credentials"></param>
+        /// <param name="webProxy"></param>
+        private static Stream GetEdmxStreamFromUri(Uri metadataUri, ICredentials credentials, IWebProxy webProxy)
         {
             Debug.Assert(metadataUri != null, "metadataUri != null");
             Stream metadataStream;
@@ -462,7 +458,9 @@ namespace OData4.Builder
                 try
                 {
                     var webRequest = (HttpWebRequest)WebRequest.Create(metadataUri);
-                    webRequest.Proxy = LINQPad.Util.GetWebProxy();
+                    webRequest.Credentials = credentials;
+                    webRequest.Proxy = webProxy;
+
                     var webResponse = webRequest.GetResponse();
                     metadataStream = webResponse.GetResponseStream();
                 }
@@ -473,7 +471,7 @@ namespace OData4.Builder
                     {
                         throw new WebException("Failed to access the metadata document. The OData service requires authentication for accessing it. Please download the metadata, store it into a local file, and set the value of “MetadataDocumentUri” in the .odata.config file to the file path. After that, run custom tool again to generate the OData Client code.");
                     }
-                    throw e;
+                    throw;
                 }
             }
             else
@@ -484,7 +482,7 @@ namespace OData4.Builder
             return metadataStream;
         }
 
-        public static IEnumerable<T> GetElementsFromModelTree<T>(IEdmModel mainModel, Func<IEdmModel, IEnumerable<T>> getElementFromOneModelFunc)
+        private static IEnumerable<T> GetElementsFromModelTree<T>(IEdmModel mainModel, Func<IEdmModel, IEnumerable<T>> getElementFromOneModelFunc)
         {
             var ret = new List<T>();
             if (mainModel is EdmCoreModel || mainModel.FindDeclaredValueTerm(CoreVocabularyConstants.OptimisticConcurrencyControl) != null)

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Xml;
@@ -14,6 +13,7 @@ using Microsoft.OData.Client;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using OData4.Builder;
+using OData4.UI;
 
 namespace OData4
 {
@@ -41,10 +41,10 @@ namespace OData4
 
         public override string GetConnectionDescription(IConnectionInfo cxInfo)
         {
-            return cxInfo.DatabaseInfo.Server;
+            return cxInfo.GetConnectionProperties().Uri;
         }
 
-        public override Version Version => new Version("1.0.1.0");
+        public override Version Version => new Version("1.0.3.0");
 
         public override ParameterDescriptor[] GetContextConstructorParameters(IConnectionInfo cxInfo)
         {
@@ -55,7 +55,7 @@ namespace OData4
         public override object[] GetContextConstructorArguments(IConnectionInfo cxInfo)
         {
             // We need to pass the chosen URI into the DataServiceContext's constructor:
-            return new object[] { new Uri(cxInfo.DatabaseInfo.Server) };
+            return new object[] { new Uri(cxInfo.GetConnectionProperties().Uri) };
         }
 
         public override IEnumerable<string> GetAssembliesToAdd(IConnectionInfo cxInfo)
@@ -79,29 +79,24 @@ namespace OData4
             // Populate the default URI with a demo value:
             if (isNewConnection)
             {
-                cxInfo.DatabaseInfo.Server = "http://services.odata.org/V4/OData/OData.svc/";
+                cxInfo.GetConnectionProperties().Uri = "http://services.odata.org/V4/OData/OData.svc/";
             }
 
             return new ConnectionDialog(cxInfo).ShowDialog() == true;
         }
 
-        private static NetworkCredential GetCredentials(IConnectionInfo cxInfo)
-        {
-            return (cxInfo.DatabaseInfo.UserName.Length > 0)
-                ? new NetworkCredential(cxInfo.DatabaseInfo.UserName, cxInfo.DatabaseInfo.Password)
-                : CredentialCache.DefaultNetworkCredentials;
-        }
-
         public override List<ExplorerItem> GetSchemaAndBuildAssembly(IConnectionInfo cxInfo, AssemblyName assemblyToBuild, ref string nameSpace, ref string typeName)
         {
+            var properties = cxInfo.GetConnectionProperties();
+
             // using code from Microsoft's OData v4 Client Code Generator. see https://visualstudiogallery.msdn.microsoft.com/9b786c0e-79d1-4a50-89a5-125e57475937
-            var client = new ODataClient(new Configuration(cxInfo.DatabaseInfo.Server, nameSpace));
+            var client = new ODataClient(new Configuration(properties.Uri, nameSpace, properties.GetCredentials(), properties.GetWebProxy()));
             var code = client.GenerateCode();
 
             // Compile the code into the assembly, using the assembly name provided:
             var assembly = BuildAssembly(code, assemblyToBuild);
 
-            typeName = GetContainerName(cxInfo);
+            typeName = GetContainerName(properties);
             var containerName = string.Concat(nameSpace, ".", typeName);
             var containerType = assembly.GetType(containerName);
             // Use the schema to populate the Schema Explorer:
@@ -131,21 +126,23 @@ namespace OData4
         }
 
         /// <summary> Get main schema container name for given service uri </summary>
-        /// <param name="cxInfo">connection info</param>
+        /// <param name="properties">connection info</param>
         /// <returns>Container name</returns>
-        static string GetContainerName(IConnectionInfo cxInfo)
+        static string GetContainerName(ConnectionProperties properties)
         {
             // odata v4 client inherites from DataServiceContext, use it for get IEdmModel
-
             IEdmModel model;
-
-            var context = new DataServiceContext(new Uri(cxInfo.DatabaseInfo.Server))
+            
+            var settings = new XmlReaderSettings
             {
-                Credentials = GetCredentials(cxInfo)
+                XmlResolver = new XmlUrlResolver
+                {
+                    Credentials = properties.GetCredentials(),
+                    Proxy = properties.GetWebProxy()
+                }
             };
 
-            var metadataUri = context.GetMetadataUri();
-            using (var reader = XmlReader.Create(metadataUri.ToString()))
+            using (var reader = XmlReader.Create(properties.Uri + "/$metadata", settings))
             {
                 model = EdmxReader.Parse(reader);
             }
@@ -184,9 +181,9 @@ namespace OData4
             {
                 var parentType = (Type)table.Tag;
                 table.Children = parentType.GetProperties()
-                    .Select(childProp => GetChildItem(elementTypeLookup, childProp, parentType, assembly))
-                    .OrderBy(childItem => childItem.Kind)
-                    .ToList();
+                     .Select(childProp => GetChildItem(elementTypeLookup, childProp, parentType, assembly))
+                     .OrderBy(childItem => childItem.Kind)
+                     .ToList();
             }
 
             return list;
@@ -274,7 +271,7 @@ namespace OData4
 
             sb.Append(t.Name.Substring(0, t.Name.LastIndexOf("`", StringComparison.Ordinal)));
             var i = 0;
-            t.GetGenericArguments().Aggregate(sb, (a, type) => a.Append((i++ == 0 ? "<" : ",")).Append(GetFullTypeName(type)));
+            t.GetGenericArguments().Aggregate(sb, (a, type) => a.Append(i++ == 0 ? "<" : ",").Append(GetFullTypeName(type)));
             sb.Append(">");
 
             return sb.ToString();
@@ -283,26 +280,21 @@ namespace OData4
         public override void InitializeContext(IConnectionInfo cxInfo, object context, QueryExecutionManager executionManager)
         {
             var dsContext = (DataServiceContext)context;
-            
-            // The next step is to feed any supplied credentials into the Astoria service.
-            // (This could be enhanced to support other authentication modes, too).
-            dsContext.Credentials = GetCredentials(cxInfo);
+
+            dsContext.Credentials = cxInfo.GetConnectionProperties().GetCredentials();
 
             dsContext.Configurations.RequestPipeline.OnMessageCreating += args =>
-                {
-                    
-                    var message = new CustomizedRequestMessage(args);
-                    return message;
-                };
-
-            // Finally, we handle the SendingRequest event so that it writes the request text to the SQL translation window:
+            {
+                var message = new CustomizedRequestMessage(args);
+                return message;
+            };
+            
             dsContext.SendingRequest2 += (s, e) => executionManager.SqlTranslationWriter.WriteLine(e.RequestMessage.Url);
         }
 
         public override bool AreRepositoriesEquivalent(IConnectionInfo r1, IConnectionInfo r2)
         {
-            // Two repositories point to the same endpoint if their URIs are the same.
-            return Equals(r1.DatabaseInfo.Server, r2.DatabaseInfo.Server);
+            return Equals(r1.DriverData.Element("Uri"), r2.DriverData.Element("Uri"));
         }
     }
 }
