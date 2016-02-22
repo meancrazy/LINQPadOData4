@@ -281,11 +281,12 @@ namespace OData4
         {
             var dsContext = (DataServiceContext)context;
 
-            dsContext.Credentials = cxInfo.GetConnectionProperties().GetCredentials();
+            var properties = cxInfo.GetConnectionProperties();
+            dsContext.Credentials = properties.GetCredentials();
 
             dsContext.Configurations.RequestPipeline.OnMessageCreating += args =>
             {
-                var message = new CustomizedRequestMessage(args);
+                var message = new CustomizedRequestMessage(args, properties.GetWebProxy());
                 return message;
             };
             
