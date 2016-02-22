@@ -5,6 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d"
         xmlns:ui="clr-namespace:OData4.UI"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         Title="OData 4"
         Width="450"
         WindowStartupLocation="CenterScreen"
@@ -45,7 +46,11 @@
                     <Label Grid.Column="0" Grid.Row="0">_User name</Label>
                     <TextBox Grid.Column="1" Grid.Row="0" Height="20" TabIndex="4" Text="{Binding UserName}"></TextBox>
                     <Label Grid.Column="0" Grid.Row="1">_Password</Label>
-                    <TextBox Grid.Column="1" Grid.Row="1" Height="20" TabIndex="5" Text="{Binding Password}"></TextBox>
+                    <PasswordBox Grid.Column="1" Grid.Row="1" Height="20" TabIndex="5" >
+                        <i:Interaction.Behaviors>
+                            <ui:PasswordBehavior Password="{Binding Password, Mode=TwoWay}" />
+                        </i:Interaction.Behaviors>
+                    </PasswordBox>
                     <Label Grid.Column="0" Grid.Row="2">_Domain (optional)</Label>
                     <TextBox Grid.Column="1" Grid.Row="2" Height="20" TabIndex="5" Text="{Binding Domain}"></TextBox>
                 </Grid>
