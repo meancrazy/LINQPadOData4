@@ -11,10 +11,10 @@ namespace OData4.UI
 {
     public partial class ConnectionDialog
     {
-        public ConnectionDialog(IConnectionInfo cxInfo)
+        public ConnectionDialog(ConnectionProperties connectionProperties)
         {
             InitializeComponent();
-            DataContext = new ConnectionProperties(cxInfo);
+            DataContext = connectionProperties;
         }
 
         /// <summary>

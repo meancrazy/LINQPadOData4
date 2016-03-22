@@ -58,23 +58,25 @@
         </GroupBox>
         <CheckBox Margin="0 0 0 4" TabIndex="6" IsChecked="{Binding Persist}">_Remember this connection</CheckBox>
         <Expander Header="_Advanced"  Margin="0 0 0 4" TabIndex="7">
-        <StackPanel Margin="50 0 0 0">
-            <CheckBox TabIndex="8" IsChecked="{Binding UseProxy}">Use LINQPad web proxy</CheckBox>
+        <StackPanel Margin="40 0 0 0">
+            <CheckBox Margin="6 0 0 0" TabIndex="8" IsChecked="{Binding UseProxy}">Use LINQPad web proxy</CheckBox>
             <Label TabIndex="9">
                 <Hyperlink Click="WebProxySetup">Web Proxy Setup...</Hyperlink>
             </Label>
+            <GroupBox Header="Logging">
+                <StackPanel>
+                        <CheckBox IsChecked="{Binding LogMethod}">Method</CheckBox>
+                        <CheckBox IsChecked="{Binding LogHeaders}">Headers</CheckBox>
+                </StackPanel>
+            </GroupBox>
         </StackPanel>
         </Expander>
         <DockPanel Margin="0 10 0 0" LastChildFill="False" HorizontalAlignment="Right">
-            <DockPanel.Resources>
-                <Style TargetType="Button">
-                    <Setter Property="Margin" Value="4 0 0 0" />
-                    <Setter Property="MinWidth" Value="60" />
-                </Style>
-            </DockPanel.Resources>
-            <Button IsDefault="True" TabIndex="10" Click="OnOkClick">_OK</Button>
-            <Button IsCancel="True" TabIndex="11">_Cancel</Button>
+            <Button IsDefault="True" Margin="4 0 0 0" Width="60" TabIndex="11" Click="OnOkClick">_OK</Button>
+            <Button IsCancel="True" Margin="4 0 0 0" Width="60" TabIndex="12">_Cancel</Button>
         </DockPanel>
     </StackPanel>
 </Window>
+
+
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Net;
 using System.Xml.Linq;
 using LINQPad.Extensibility.DataContext;
@@ -60,6 +61,18 @@ namespace OData4.UI
         {
             get { return (AuthenticationType?)(int?) _driverData.Element("AuthenticationType") ?? AuthenticationType.None; }
             set { _driverData.SetElementValue("AuthenticationType", (int)value);}
+        }
+        
+        public bool LogMethod
+        {
+            get { return (bool?)_driverData.Element("LogMethod") ?? true; }
+            set { _driverData.SetElementValue("LogMethod", value.ToString()); }
+        }
+        
+        public bool LogHeaders
+        {
+            get { return (bool?)_driverData.Element("LogHeaders") ?? true; }
+            set { _driverData.SetElementValue("LogHeaders", value.ToString()); }
         }
 
         public ICredentials GetCredentials()

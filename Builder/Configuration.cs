@@ -11,7 +11,7 @@ namespace OData4.Builder
         public string MetadataDocumentUri { get; }
 
         // The use of DataServiceCollection enables entity and property tracking. The value must be set to true or false.
-        public bool UseDataServiceCollection => true;
+        public bool UseDataServiceCollection => false;
 
         // The namespace of the client code generated. It replaces the original namespace in the metadata document, 
         // unless the model has several namespaces.
