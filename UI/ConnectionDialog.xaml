@@ -59,6 +59,7 @@
         <CheckBox Margin="0 0 0 4" TabIndex="6" IsChecked="{Binding Persist}">_Remember this connection</CheckBox>
         <Expander Header="_Advanced"  Margin="0 0 0 4" TabIndex="7">
         <StackPanel Margin="40 0 0 0">
+            <CheckBox Margin="6 0 0 0" TabIndex="8" IsChecked="{Binding AcceptInvalidCertificate}">Accept invalid certificates</CheckBox>
             <CheckBox Margin="6 0 0 0" TabIndex="8" IsChecked="{Binding UseProxy}">Use LINQPad web proxy</CheckBox>
             <Label TabIndex="9">
                 <Hyperlink Click="WebProxySetup">Web Proxy Setup...</Hyperlink>

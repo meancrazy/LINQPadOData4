@@ -56,7 +56,13 @@ namespace OData4.UI
             get { return (bool?)_driverData.Element("UseProxy") ?? false; }
             set { _driverData.SetElementValue("UseProxy", value.ToString()); }
         }
-        
+
+        public bool AcceptInvalidCertificate
+        {
+            get { return (bool?)_driverData.Element("AcceptInvalidCertificate") ?? false; }
+            set { _driverData.SetElementValue("AcceptInvalidCertificate", value.ToString()); }
+        }
+
         public AuthenticationType AuthenticationType
         {
             get { return (AuthenticationType?)(int?) _driverData.Element("AuthenticationType") ?? AuthenticationType.None; }
