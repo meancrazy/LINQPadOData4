@@ -28,12 +28,15 @@ namespace OData4.Builder
 
         public IWebProxy WebProxy { get; }
 
-        public Configuration(string uri, string namespacePrefix, ICredentials credentials, IWebProxy webProxy)
+        public bool AcceptInvalidCertificate { get; }
+
+        public Configuration(string uri, string namespacePrefix, ICredentials credentials, IWebProxy webProxy, bool acceptInvalidCertificate)
         {
             MetadataDocumentUri = uri;
             NamespacePrefix = namespacePrefix;
             Credentials = credentials;
             WebProxy = webProxy;
+            AcceptInvalidCertificate = acceptInvalidCertificate;
         }
     }
 }

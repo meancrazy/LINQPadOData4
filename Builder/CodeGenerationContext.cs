@@ -89,7 +89,8 @@ namespace OData4.Builder
         /// schemas. If this argument is null, the namespaces from the model are used for all types.</param>
         /// <param name="credentials"></param>
         /// <param name="webProxy"></param>
-        public CodeGenerationContext(Uri metadataUri, string namespacePrefix, ICredentials credentials, IWebProxy webProxy) : this(GetEdmxStringFromMetadataPath(metadataUri, credentials, webProxy), namespacePrefix, credentials, webProxy)
+        public CodeGenerationContext(Uri metadataUri, string namespacePrefix, ICredentials credentials, IWebProxy webProxy, bool acceptInvalidCertificate) 
+            : this(GetEdmxStringFromMetadataPath(metadataUri, credentials, webProxy, acceptInvalidCertificate), namespacePrefix, credentials, webProxy, acceptInvalidCertificate)
         {
         }
 
@@ -102,12 +103,14 @@ namespace OData4.Builder
         /// schemas. If this argument is null, the namespaces from the model are used for all types.</param>
         /// <param name="credentials"></param>
         /// <param name="webProxy"></param>
-        private CodeGenerationContext(string edmx, string namespacePrefix, ICredentials credentials, IWebProxy webProxy)
+        /// <param name="acceptInvalidCertificate"></param>
+        private CodeGenerationContext(string edmx, string namespacePrefix, ICredentials credentials, IWebProxy webProxy, bool acceptInvalidCertificate)
         {
             Edmx = XElement.Parse(edmx);
             _namespacePrefix = namespacePrefix;
             _credentials = credentials;
             _webProxy = webProxy;
+            _acceptInvalidCertificate = acceptInvalidCertificate;
         }
 
         /// <summary> The EdmModel to generate code for. </summary>
@@ -127,7 +130,7 @@ namespace OData4.Builder
                     IEnumerable<EdmError> errors;
                     var edmxReaderSettings = new EdmxReaderSettings
                     {
-                        GetReferencedModelReaderFunc = uri => GetReferencedModelReaderFuncWrapper(uri, _credentials, _webProxy),
+                        GetReferencedModelReaderFunc = uri => GetReferencedModelReaderFuncWrapper(uri, _credentials, _webProxy, _acceptInvalidCertificate),
                         IgnoreUnexpectedAttributesAndElements = IgnoreUnexpectedElementsAndAttributes
                     };
 
@@ -151,7 +154,7 @@ namespace OData4.Builder
         }
 
         /// <summary> The func for user code to overwrite and provide referenced model's XmlReader. </summary>
-        private readonly Func<Uri, ICredentials, IWebProxy, XmlReader> _getReferencedModelReaderFunc = (uri, credentials, webProxy) => XmlReader.Create(GetEdmxStreamFromUri(uri, credentials, webProxy), Settings);
+        private readonly Func<Uri, ICredentials, IWebProxy, bool, XmlReader> _getReferencedModelReaderFunc = (uri, credentials, webProxy, acceptInvalidCertificate) => XmlReader.Create(GetEdmxStreamFromUri(uri, credentials, webProxy, acceptInvalidCertificate), Settings);
 
         /// <summary>
         /// Basic setting for XmlReader.
@@ -161,13 +164,13 @@ namespace OData4.Builder
         /// <summary>
         /// The Wrapper func for user code to overwrite and provide referenced model's stream.
         /// </summary>
-        public Func<Uri, ICredentials, IWebProxy, XmlReader> GetReferencedModelReaderFuncWrapper
+        public Func<Uri, ICredentials, IWebProxy, bool, XmlReader> GetReferencedModelReaderFuncWrapper
         {
             get
             {
-                return (uri, credentials, webProxy) =>
+                return (uri, credentials, webProxy, acceptInvalidCertificate) =>
                 {
-                    using (var reader = _getReferencedModelReaderFunc(uri, credentials, webProxy))
+                    using (var reader = _getReferencedModelReaderFunc(uri, credentials, webProxy, acceptInvalidCertificate))
                     {
                         if (reader == null)
                         {
@@ -313,6 +316,8 @@ namespace OData4.Builder
         
         private readonly IWebProxy _webProxy;
 
+        private readonly bool _acceptInvalidCertificate;
+
         /// <summary>
         /// true if this EntityContainer need to set the UrlConvention to KeyAsSegment, false otherwise.
         /// </summary>
@@ -428,10 +433,11 @@ namespace OData4.Builder
         /// <param name="metadataUri">The Uri to the metadata document. The supported scheme are File, http and https.</param>
         /// <param name="credentials"></param>
         /// <param name="webProxy"></param>
-        private static string GetEdmxStringFromMetadataPath(Uri metadataUri, ICredentials credentials, IWebProxy webProxy)
+        /// <param name="acceptInvalidCertificate"></param>
+        private static string GetEdmxStringFromMetadataPath(Uri metadataUri, ICredentials credentials, IWebProxy webProxy, bool acceptInvalidCertificate)
         {
             string content;
-            using (var streamReader = new StreamReader(GetEdmxStreamFromUri(metadataUri, credentials, webProxy)))
+            using (var streamReader = new StreamReader(GetEdmxStreamFromUri(metadataUri, credentials, webProxy, acceptInvalidCertificate)))
             {
                 content = streamReader.ReadToEnd();
             }
@@ -445,7 +451,8 @@ namespace OData4.Builder
         /// <param name="metadataUri">The Uri to the stream. The supported scheme are File, http and https.</param>
         /// <param name="credentials"></param>
         /// <param name="webProxy"></param>
-        private static Stream GetEdmxStreamFromUri(Uri metadataUri, ICredentials credentials, IWebProxy webProxy)
+        /// <param name="acceptInvalidCertificate"></param>
+        private static Stream GetEdmxStreamFromUri(Uri metadataUri, ICredentials credentials, IWebProxy webProxy, bool acceptInvalidCertificate)
         {
             Debug.Assert(metadataUri != null, "metadataUri != null");
             Stream metadataStream;
@@ -460,6 +467,9 @@ namespace OData4.Builder
                     var webRequest = (HttpWebRequest)WebRequest.Create(metadataUri);
                     webRequest.Credentials = credentials;
                     webRequest.Proxy = webProxy;
+
+                    ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) 
+                        => { return acceptInvalidCertificate; };
 
                     var webResponse = webRequest.GetResponse();
                     metadataStream = webResponse.GetResponseStream();

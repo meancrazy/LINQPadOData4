@@ -109,7 +109,7 @@ namespace OData4
             var properties = connectionInfo.GetConnectionProperties();
 
             // using code from Microsoft's OData v4 Client Code Generator. see https://visualstudiogallery.msdn.microsoft.com/9b786c0e-79d1-4a50-89a5-125e57475937
-            var client = new ODataClient(new Configuration(properties.Uri, nameSpace, properties.GetCredentials(), properties.GetWebProxy()));
+            var client = new ODataClient(new Configuration(properties.Uri, nameSpace, properties.GetCredentials(), properties.GetWebProxy(), properties.AcceptInvalidCertificate));
             var code = client.GenerateCode();
 
             // Compile the code into the assembly, using the assembly name provided:
