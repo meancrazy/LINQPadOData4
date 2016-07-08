@@ -23,7 +23,9 @@ namespace OData4
         {
             "System.dll",
             "System.Core.dll",
-            "System.Xml.dll"
+            "System.Runtime.dll",
+            "System.Xml.dll",
+            "System.Xml.ReaderWriter.dll",
         };
 
         /// <summary> Assemblies, using both to compile generated code and to load into LINQPad </summary>
@@ -31,7 +33,7 @@ namespace OData4
             "Microsoft.OData.Client.dll",
             "Microsoft.OData.Core.dll",
             "Microsoft.OData.Edm.dll",
-            "Microsoft.Spatial.dll"
+            "Microsoft.Spatial.dll",
         };
 
         private List<string> _namespaces;
@@ -85,7 +87,7 @@ namespace OData4
         {
             var connectionProperties = connectionInfo.GetConnectionProperties();
 
-            // Populate the default URI with a demo value:
+            // Populate the default URI with a demo data:
             if (isNewConnection)
                 connectionProperties.Uri = "http://services.odata.org/V4/OData/OData.svc/";
 
@@ -109,7 +111,7 @@ namespace OData4
             var properties = connectionInfo.GetConnectionProperties();
 
             // using code from Microsoft's OData v4 Client Code Generator. see https://visualstudiogallery.msdn.microsoft.com/9b786c0e-79d1-4a50-89a5-125e57475937
-            var client = new ODataClient(new Configuration(properties.Uri, nameSpace, properties.GetCredentials(), properties.GetWebProxy(), properties.AcceptInvalidCertificate));
+            var client = new ODataClient(new Configuration(properties.Uri, nameSpace, properties));
             var code = client.GenerateCode();
 
             // Compile the code into the assembly, using the assembly name provided:
@@ -166,7 +168,7 @@ namespace OData4
 
             dsContext.Configurations.RequestPipeline.OnMessageCreating += args =>
             {
-                var message = new CustomizedRequestMessage(args, properties.GetWebProxy());
+                var message = new CustomizedRequestMessage(args, properties);
                 return message;
             };
             

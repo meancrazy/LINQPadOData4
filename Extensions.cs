@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Xml;
 using LINQPad.Extensibility.DataContext;
 using Microsoft.OData.Edm;
@@ -44,17 +46,17 @@ namespace OData4
             var schema = new List<ExplorerItem>();
 
             var sets = model.EntityContainer
-                              .EntitySets()
-                              .OrderBy(o => o.Name)
-                              .Select(o => new ExplorerItem(o.Name, ExplorerItemKind.QueryableObject, ExplorerIcon.Table)
-                                                                {
-                                                                    IsEnumerable = true,
-                                                                    ToolTipText = o.EntityType().Name,
-                                                                    DragText = o.Name,
-                                                                    
-                                                                    Tag = o.EntityType()
-                                                                })
-                              .ToList();
+                            .EntitySets()
+                            .OrderBy(o => o.Name)
+                            .Select(o => new ExplorerItem(o.Name, ExplorerItemKind.QueryableObject, ExplorerIcon.Table)
+                                                              {
+                                                                  IsEnumerable = true,
+                                                                  ToolTipText = o.EntityType().Name,
+                                                                  DragText = o.Name,
+                                                                  
+                                                                  Tag = o.EntityType()
+                                                              })
+                            .ToList();
 
             foreach (var set in sets)
             {
@@ -132,6 +134,24 @@ namespace OData4
 
             var element1 = edmCollectionType.ElementType.Definition as IEdmNamedElement;
             return element1 == null ? null : $"Collection({element1.Name})";
+        }
+
+        public static X509Certificate GetClientCertificate(this ConnectionProperties properties)
+        {
+            if (string.IsNullOrWhiteSpace(properties.ClientCertificateFile)) return null;
+            
+            X509Certificate cert;
+            try
+            {
+                cert = X509Certificate.CreateFromCertFile(properties.ClientCertificateFile);
+            }
+            catch (Exception)
+            {
+                // todo: we can't load certificate file
+                cert = null;
+            }
+
+            return cert;
         }
     }
 }

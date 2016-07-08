@@ -23,7 +23,21 @@
                 </StackPanel.Resources>
                 <RadioButton Margin="0 0 0 4" IsChecked="{Binding Path=AuthenticationType, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static ui:AuthenticationType.None}}" TabIndex="1">_No authentication</RadioButton>
                 <RadioButton Margin="0 0 0 4" IsChecked="{Binding Path=AuthenticationType, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static ui:AuthenticationType.Windows}}" TabIndex="2">_Windows authentication</RadioButton>
-                <RadioButton Margin="0 0 0 4" IsChecked="{Binding Path=AuthenticationType, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static ui:AuthenticationType.Basic}}" TabIndex="3" Name="BasicAuthentication">_Basic authentication</RadioButton>
+                <RadioButton Margin="0 0 0 4" IsChecked="{Binding Path=AuthenticationType, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static ui:AuthenticationType.Basic}}" TabIndex="3" x:Name="BasicAuthentication">_Basic authentication</RadioButton>
+                <RadioButton Margin="0 0 0 4" IsChecked="{Binding Path=AuthenticationType, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static ui:AuthenticationType.ClientCertificate}}" TabIndex="4" x:Name="ClientCertificateAuthentication">_Client certificate authentication</RadioButton>
+                <StackPanel Margin="40 4 100 4" Orientation="Horizontal">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsChecked, ElementName=ClientCertificateAuthentication}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <Label Content="Certificate file:" />
+                    <TextBox Text="{Binding ClientCertificateFile}" HorizontalAlignment="Stretch" Width="190" />
+                </StackPanel>
                 <Grid Margin="40 4 100 4">
                     <Grid.Style>
                         <Style TargetType="Grid">
@@ -58,26 +72,41 @@
         </GroupBox>
         <CheckBox Margin="0 0 0 4" TabIndex="6" IsChecked="{Binding Persist}">_Remember this connection</CheckBox>
         <Expander Header="_Advanced"  Margin="0 0 0 4" TabIndex="7">
-        <StackPanel Margin="40 0 0 0">
-            <CheckBox Margin="6 0 0 0" TabIndex="8" IsChecked="{Binding AcceptInvalidCertificate}">Accept invalid certificates</CheckBox>
-            <CheckBox Margin="6 0 0 0" TabIndex="8" IsChecked="{Binding UseProxy}">Use LINQPad web proxy</CheckBox>
-            <Label TabIndex="9">
-                <Hyperlink Click="WebProxySetup">Web Proxy Setup...</Hyperlink>
-            </Label>
-            <GroupBox Header="Logging">
-                <StackPanel>
-                        <CheckBox IsChecked="{Binding LogMethod}">Method</CheckBox>
-                        <CheckBox IsChecked="{Binding LogHeaders}">Headers</CheckBox>
-                </StackPanel>
-            </GroupBox>
-        </StackPanel>
+            <StackPanel Margin="40 0 0 0">
+                <CheckBox Margin="6 4 0 0" TabIndex="8" IsChecked="{Binding AcceptInvalidCertificate}">Accept invalid certificates</CheckBox>
+                <CheckBox Margin="6 4 0 0" TabIndex="8" IsChecked="{Binding UseProxy}">Use LINQPad web proxy</CheckBox>
+                <Label TabIndex="9">
+                    <Hyperlink Click="WebProxySetup">Web Proxy Setup...</Hyperlink>
+                </Label>
+                <Label TabIndex="10">
+                    <Hyperlink Click="CustomHeaders">Custom Headers...</Hyperlink>
+                </Label>
+                <GroupBox Header="Logging">
+                    <StackPanel>
+                        <CheckBox Margin="6,4,0,0" IsChecked="{Binding LogMethod}" TabIndex="11">Method</CheckBox>
+                        <CheckBox Margin="6,4,0,0" IsChecked="{Binding LogHeaders}" TabIndex="12">Headers</CheckBox>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
         </Expander>
         <DockPanel Margin="0 10 0 0" LastChildFill="False" HorizontalAlignment="Right">
-            <Button IsDefault="True" Margin="4 0 0 0" Width="60" TabIndex="11" Click="OnOkClick">_OK</Button>
-            <Button IsCancel="True" Margin="4 0 0 0" Width="60" TabIndex="12">_Cancel</Button>
+            <Button IsDefault="True" Margin="4 0 0 0" Width="60" TabIndex="13" Click="OnOkClick">_OK</Button>
+            <Button IsCancel="True" Margin="4 0 0 0" Width="60" TabIndex="14">_Cancel</Button>
         </DockPanel>
     </StackPanel>
 </Window>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

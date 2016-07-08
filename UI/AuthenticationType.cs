@@ -4,6 +4,7 @@ namespace OData4.UI
     {
         None = 0,
         Windows = 1,
-        Basic = 2, 
+        Basic = 2,
+        ClientCertificate = 3,
     }
 }

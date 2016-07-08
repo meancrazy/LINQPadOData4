@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -11,19 +12,18 @@ namespace OData4.UI
 {
     public partial class ConnectionDialog
     {
+        private readonly ConnectionProperties _connectionProperties;
+
         public ConnectionDialog(ConnectionProperties connectionProperties)
         {
             InitializeComponent();
-            DataContext = connectionProperties;
+            _connectionProperties = connectionProperties;
+            DataContext = _connectionProperties;
         }
 
-        /// <summary>
-        /// Raises the <see cref="E:System.Windows.Window.SourceInitialized"/> event.
-        /// </summary>
-        /// <param name="e">An <see cref="T:System.EventArgs"/> that contains the event data.</param>
         protected override void OnSourceInitialized(EventArgs e)
         {
-            IntPtr hwnd = new WindowInteropHelper(this).Handle;
+            var hwnd = new WindowInteropHelper(this).Handle;
 
             // Change the window style to remove icon and buttons
             SetWindowLong(hwnd, GWL_STYLE, GetWindowLong(hwnd, GWL_STYLE) & (0xFFFFFFFF ^ WS_SYSMENU));
@@ -55,9 +55,7 @@ namespace OData4.UI
             try
             {
                 var type = Assembly.GetAssembly(typeof(IConnectionInfo)).GetType("LINQPad.UI.ProxyForm");
-
                 var ci = type.GetConstructor(new Type[] { });
-
                 using (var form = (Form)ci.Invoke(null))
                 {
                     form.ShowDialog();
@@ -67,6 +65,31 @@ namespace OData4.UI
             {
                 MessageBox.Show("Couldn't show LINQPad Web proxy settings.\r\n" +
                                 "Open it manually from Edit->Preferences->Web proxy.\r\n" +
+                                $"{ex.Message}",
+                                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CustomHeaders(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var type = Assembly.GetAssembly(typeof(IConnectionInfo)).GetType("LINQPad.UI.CustomHeadersForm");
+                var ci = type.GetConstructor(new Type[] { });
+                using (var form = (Form)ci.Invoke(null))
+                {
+                    var headers = type.GetProperty("Headers");
+                    headers.SetValue(form, _connectionProperties.CustomHeaders);
+
+                    if (form.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                        return;
+                    
+                    _connectionProperties.CustomHeaders = (IEnumerable<KeyValuePair<string, string>>)headers.GetValue(form);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Something goes wrong :(\r\n" +
                                 $"{ex.Message}",
                                 "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }

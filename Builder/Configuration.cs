@@ -1,4 +1,4 @@
-using System.Net;
+using OData4.UI;
 
 namespace OData4.Builder
 {
@@ -17,6 +17,8 @@ namespace OData4.Builder
         // unless the model has several namespaces.
         public string NamespacePrefix { get; }
 
+        public ConnectionProperties Properties { get; }
+
         // This flag indicates whether to enable naming alias. The value must be set to true or false.
         public bool EnableNamingAlias => false;
 
@@ -24,19 +26,11 @@ namespace OData4.Builder
         // the client code if any. The value must be set to true or false.
         public bool IgnoreUnexpectedElementsAndAttributes => true;
 
-        public ICredentials Credentials { get; }
-
-        public IWebProxy WebProxy { get; }
-
-        public bool AcceptInvalidCertificate { get; }
-
-        public Configuration(string uri, string namespacePrefix, ICredentials credentials, IWebProxy webProxy, bool acceptInvalidCertificate)
+        public Configuration(string uri, string namespacePrefix, ConnectionProperties properties)
         {
             MetadataDocumentUri = uri;
             NamespacePrefix = namespacePrefix;
-            Credentials = credentials;
-            WebProxy = webProxy;
-            AcceptInvalidCertificate = acceptInvalidCertificate;
+            Properties = properties;
         }
     }
 }

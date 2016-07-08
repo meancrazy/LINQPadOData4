@@ -14,6 +14,7 @@ using Microsoft.OData.Edm.Library;
 using Microsoft.OData.Edm.Validation;
 using Microsoft.OData.Edm.Vocabularies.Community.V1;
 using Microsoft.OData.Edm.Vocabularies.V1;
+using OData4.UI;
 
 namespace OData4.Builder
 {
@@ -43,6 +44,8 @@ namespace OData4.Builder
         /// namespaces from the model are used for all types.
         /// </summary>
         private readonly string _namespacePrefix;
+
+        private readonly ConnectionProperties _properties;
 
         /// <summary>
         /// The EdmModel to generate code for.
@@ -87,10 +90,9 @@ namespace OData4.Builder
         /// <param name="namespacePrefix">The namespacePrefix is used as the only namespace in generated code
         /// when there's only one schema in edm model, and as a prefix for the namespace from the model with multiple
         /// schemas. If this argument is null, the namespaces from the model are used for all types.</param>
-        /// <param name="credentials"></param>
-        /// <param name="webProxy"></param>
-        public CodeGenerationContext(Uri metadataUri, string namespacePrefix, ICredentials credentials, IWebProxy webProxy, bool acceptInvalidCertificate) 
-            : this(GetEdmxStringFromMetadataPath(metadataUri, credentials, webProxy, acceptInvalidCertificate), namespacePrefix, credentials, webProxy, acceptInvalidCertificate)
+        /// <param name="properties"></param>
+        public CodeGenerationContext(Uri metadataUri, string namespacePrefix, ConnectionProperties properties) 
+            : this(GetEdmxStringFromMetadataPath(metadataUri, properties), namespacePrefix, properties)
         {
         }
 
@@ -101,16 +103,12 @@ namespace OData4.Builder
         /// <param name="namespacePrefix">The namespacePrefix is used as the only namespace in generated code
         /// when there's only one schema in edm model, and as a prefix for the namespace from the model with multiple
         /// schemas. If this argument is null, the namespaces from the model are used for all types.</param>
-        /// <param name="credentials"></param>
-        /// <param name="webProxy"></param>
-        /// <param name="acceptInvalidCertificate"></param>
-        private CodeGenerationContext(string edmx, string namespacePrefix, ICredentials credentials, IWebProxy webProxy, bool acceptInvalidCertificate)
+        /// <param name="properties"></param>
+        private CodeGenerationContext(string edmx, string namespacePrefix, ConnectionProperties properties)
         {
             Edmx = XElement.Parse(edmx);
             _namespacePrefix = namespacePrefix;
-            _credentials = credentials;
-            _webProxy = webProxy;
-            _acceptInvalidCertificate = acceptInvalidCertificate;
+            _properties = properties;
         }
 
         /// <summary> The EdmModel to generate code for. </summary>
@@ -123,30 +121,25 @@ namespace OData4.Builder
         {
             get
             {
-                if (_edmModel == null)
+                if (_edmModel != null) return _edmModel;
+                
+                IEnumerable<EdmError> errors;
+                var edmxReaderSettings = new EdmxReaderSettings
                 {
-                    Debug.Assert(Edmx != null, "this.edmx != null");
+                    GetReferencedModelReaderFunc = uri => GetReferencedModelReaderFuncWrapper(uri, _properties),
+                    IgnoreUnexpectedAttributesAndElements = IgnoreUnexpectedElementsAndAttributes
+                };
 
-                    IEnumerable<EdmError> errors;
-                    var edmxReaderSettings = new EdmxReaderSettings
-                    {
-                        GetReferencedModelReaderFunc = uri => GetReferencedModelReaderFuncWrapper(uri, _credentials, _webProxy, _acceptInvalidCertificate),
-                        IgnoreUnexpectedAttributesAndElements = IgnoreUnexpectedElementsAndAttributes
-                    };
+                if (!EdmxReader.TryParse(Edmx.CreateReader(ReaderOptions.None), Enumerable.Empty<IEdmModel>(), edmxReaderSettings, out _edmModel, out errors))
+                {
+                    throw new InvalidOperationException(errors.FirstOrDefault().ErrorMessage);
+                }
 
-                    if (!EdmxReader.TryParse(Edmx.CreateReader(ReaderOptions.None), Enumerable.Empty<IEdmModel>(), edmxReaderSettings, out _edmModel, out errors))
-                    {
-                        Debug.Assert(errors != null, "errors != null");
-                        throw new InvalidOperationException(errors.FirstOrDefault().ErrorMessage);
-                    }
+                if (!IgnoreUnexpectedElementsAndAttributes) return _edmModel;
 
-                    if (IgnoreUnexpectedElementsAndAttributes)
-                    {
-                        if (errors != null && errors.Any())
-                        {
-                            _warnings = errors.Select(e => e.ErrorMessage).ToArray();
-                        }
-                    }
+                if (errors != null && errors.Any())
+                {
+                    _warnings = errors.Select(e => e.ErrorMessage).ToArray();
                 }
 
                 return _edmModel;
@@ -154,7 +147,7 @@ namespace OData4.Builder
         }
 
         /// <summary> The func for user code to overwrite and provide referenced model's XmlReader. </summary>
-        private readonly Func<Uri, ICredentials, IWebProxy, bool, XmlReader> _getReferencedModelReaderFunc = (uri, credentials, webProxy, acceptInvalidCertificate) => XmlReader.Create(GetEdmxStreamFromUri(uri, credentials, webProxy, acceptInvalidCertificate), Settings);
+        private readonly Func<Uri, ConnectionProperties, XmlReader> _getReferencedModelReaderFunc = (uri, properties) => XmlReader.Create(GetEdmxStreamFromUri(uri, properties), Settings);
 
         /// <summary>
         /// Basic setting for XmlReader.
@@ -164,13 +157,13 @@ namespace OData4.Builder
         /// <summary>
         /// The Wrapper func for user code to overwrite and provide referenced model's stream.
         /// </summary>
-        public Func<Uri, ICredentials, IWebProxy, bool, XmlReader> GetReferencedModelReaderFuncWrapper
+        public Func<Uri, ConnectionProperties, XmlReader> GetReferencedModelReaderFuncWrapper
         {
             get
             {
-                return (uri, credentials, webProxy, acceptInvalidCertificate) =>
+                return (uri, properties) =>
                 {
-                    using (var reader = _getReferencedModelReaderFunc(uri, credentials, webProxy, acceptInvalidCertificate))
+                    using (var reader = _getReferencedModelReaderFunc(uri, properties))
                     {
                         if (reader == null)
                         {
@@ -224,11 +217,10 @@ namespace OData4.Builder
         {
             get
             {
-                if (!_modelHasInheritance.HasValue)
-                {
-                    Debug.Assert(EdmModel != null, "this.EdmModel != null");
-                    _modelHasInheritance = EdmModel.SchemaElementsAcrossModels().OfType<IEdmStructuredType>().Any(t => t.BaseType != null);
-                }
+                if (_modelHasInheritance.HasValue) return _modelHasInheritance.Value;
+
+                Debug.Assert(EdmModel != null, "this.EdmModel != null");
+                _modelHasInheritance = EdmModel.SchemaElementsAcrossModels().OfType<IEdmStructuredType>().Any(t => t.BaseType != null);
 
                 return _modelHasInheritance.Value;
             }
@@ -252,40 +244,39 @@ namespace OData4.Builder
         {
             get
             {
-                if (_namespaceMap == null)
+                if (_namespaceMap != null) return _namespaceMap;
+
+                if (!string.IsNullOrEmpty(_namespacePrefix))
                 {
-                    if (!string.IsNullOrEmpty(_namespacePrefix))
+                    if (NamespacesInModel.Length == 1)
                     {
-                        if (NamespacesInModel.Count() == 1)
-                        {
-                            var container = EdmModel.EntityContainer;
-                            var containerNamespace = container == null ? null : container.Namespace;
-                            _namespaceMap = NamespacesInModel
-                                .Distinct()
-                                .ToDictionary(
-                                    ns => ns,
-                                    ns => ns == containerNamespace ?
-                                        _namespacePrefix :
-                                        _namespacePrefix + "." + (EnableNamingAlias ? Customization.CustomizeNamespace(ns) : ns));
-                        }
-                        else
-                        {
-                            _namespaceMap = NamespacesInModel
-                                .Distinct()
-                                .ToDictionary(
-                                    ns => ns,
-                                    ns => _namespacePrefix + "." + (EnableNamingAlias ? Customization.CustomizeNamespace(ns) : ns));
-                        }
-                    }
-                    else if (EnableNamingAlias)
-                    {
-                        _namespaceMap = NamespacesInModel.Distinct()
-                                                         .ToDictionary(ns => ns, Customization.CustomizeNamespace);
+                        var container = EdmModel.EntityContainer;
+                        var containerNamespace = container?.Namespace;
+                        _namespaceMap = NamespacesInModel
+                            .Distinct()
+                            .ToDictionary(
+                                ns => ns,
+                                ns => ns == containerNamespace ?
+                                    _namespacePrefix :
+                                    _namespacePrefix + "." + (EnableNamingAlias ? Customization.CustomizeNamespace(ns) : ns));
                     }
                     else
                     {
-                        _namespaceMap = new Dictionary<string, string>();
+                        _namespaceMap = NamespacesInModel
+                            .Distinct()
+                            .ToDictionary(
+                                ns => ns,
+                                ns => _namespacePrefix + "." + (EnableNamingAlias ? Customization.CustomizeNamespace(ns) : ns));
                     }
+                }
+                else if (EnableNamingAlias)
+                {
+                    _namespaceMap = NamespacesInModel.Distinct()
+                        .ToDictionary(ns => ns, Customization.CustomizeNamespace);
+                }
+                else
+                {
+                    _namespaceMap = new Dictionary<string, string>();
                 }
 
                 return _namespaceMap;
@@ -312,12 +303,6 @@ namespace OData4.Builder
         /// </summary>
         public Dictionary<IEdmEntityType, List<IEdmNavigationSource>> ElementTypeToNavigationSourceMap => _elementTypeToNavigationSourceMap ?? (_elementTypeToNavigationSourceMap = new Dictionary<IEdmEntityType, List<IEdmNavigationSource>>(EqualityComparer<IEdmEntityType>.Default));
         
-        private readonly ICredentials _credentials;
-        
-        private readonly IWebProxy _webProxy;
-
-        private readonly bool _acceptInvalidCertificate;
-
         /// <summary>
         /// true if this EntityContainer need to set the UrlConvention to KeyAsSegment, false otherwise.
         /// </summary>
@@ -431,13 +416,11 @@ namespace OData4.Builder
         /// Reads the edmx string from a file path or a http/https path.
         /// </summary>
         /// <param name="metadataUri">The Uri to the metadata document. The supported scheme are File, http and https.</param>
-        /// <param name="credentials"></param>
-        /// <param name="webProxy"></param>
-        /// <param name="acceptInvalidCertificate"></param>
-        private static string GetEdmxStringFromMetadataPath(Uri metadataUri, ICredentials credentials, IWebProxy webProxy, bool acceptInvalidCertificate)
+        /// <param name="properties"></param>
+        private static string GetEdmxStringFromMetadataPath(Uri metadataUri, ConnectionProperties properties)
         {
             string content;
-            using (var streamReader = new StreamReader(GetEdmxStreamFromUri(metadataUri, credentials, webProxy, acceptInvalidCertificate)))
+            using (var streamReader = new StreamReader(GetEdmxStreamFromUri(metadataUri, properties)))
             {
                 content = streamReader.ReadToEnd();
             }
@@ -449,10 +432,8 @@ namespace OData4.Builder
         /// Get the metadata stream from a file path or a http/https path.
         /// </summary>
         /// <param name="metadataUri">The Uri to the stream. The supported scheme are File, http and https.</param>
-        /// <param name="credentials"></param>
-        /// <param name="webProxy"></param>
-        /// <param name="acceptInvalidCertificate"></param>
-        private static Stream GetEdmxStreamFromUri(Uri metadataUri, ICredentials credentials, IWebProxy webProxy, bool acceptInvalidCertificate)
+        /// <param name="properties"></param>
+        private static Stream GetEdmxStreamFromUri(Uri metadataUri, ConnectionProperties properties)
         {
             Debug.Assert(metadataUri != null, "metadataUri != null");
             Stream metadataStream;
@@ -465,11 +446,17 @@ namespace OData4.Builder
                 try
                 {
                     var webRequest = (HttpWebRequest)WebRequest.Create(metadataUri);
-                    webRequest.Credentials = credentials;
-                    webRequest.Proxy = webProxy;
+                    webRequest.Credentials = properties.GetCredentials();
+                    webRequest.Proxy = properties.GetWebProxy();
+                    webRequest.Headers.Add(properties.GetCustomHeaders());
 
-                    ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) 
-                        => { return acceptInvalidCertificate; };
+                    var cert = properties.GetClientCertificate();
+                    if (cert != null)
+                    {
+                        webRequest.ClientCertificates.Add(cert);
+                    }
+
+                    ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => properties.AcceptInvalidCertificate;
 
                     var webResponse = webRequest.GetResponse();
                     metadataStream = webResponse.GetResponseStream();

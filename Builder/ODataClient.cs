@@ -26,7 +26,7 @@ namespace OData4.Builder
 
         public string GenerateCode()
         {
-            var context = new CodeGenerationContext(new Uri(MetadataDocumentUri, UriKind.Absolute), NamespacePrefix, _configuration.Credentials, _configuration.WebProxy, _configuration.AcceptInvalidCertificate)
+            var context = new CodeGenerationContext(new Uri(MetadataDocumentUri, UriKind.Absolute), NamespacePrefix, _configuration.Properties)
             {
                 UseDataServiceCollection = _configuration.UseDataServiceCollection,
                 EnableNamingAlias = _configuration.EnableNamingAlias,
