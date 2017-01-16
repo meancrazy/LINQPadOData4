@@ -35,7 +35,7 @@ namespace OData4
 
             using (var reader = XmlReader.Create(uri, settings))
             {
-                model = EdmxReader.Parse(reader);
+                model = CsdlReader.Parse(reader);
             }
 
             return model;

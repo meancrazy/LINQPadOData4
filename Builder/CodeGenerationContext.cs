@@ -7,11 +7,9 @@ using System.Net;
 using System.Xml;
 using System.Xml.Linq;
 using Microsoft.OData.Edm;
-using Microsoft.OData.Edm.Annotations;
 using Microsoft.OData.Edm.Csdl;
-using Microsoft.OData.Edm.Expressions;
-using Microsoft.OData.Edm.Library;
 using Microsoft.OData.Edm.Validation;
+using Microsoft.OData.Edm.Vocabularies;
 using Microsoft.OData.Edm.Vocabularies.Community.V1;
 using Microsoft.OData.Edm.Vocabularies.V1;
 using OData4.UI;
@@ -124,13 +122,13 @@ namespace OData4.Builder
                 if (_edmModel != null) return _edmModel;
                 
                 IEnumerable<EdmError> errors;
-                var edmxReaderSettings = new EdmxReaderSettings
+                var edmxReaderSettings = new CsdlReaderSettings
                 {
                     GetReferencedModelReaderFunc = uri => GetReferencedModelReaderFuncWrapper(uri, _properties),
                     IgnoreUnexpectedAttributesAndElements = IgnoreUnexpectedElementsAndAttributes
                 };
 
-                if (!EdmxReader.TryParse(Edmx.CreateReader(ReaderOptions.None), Enumerable.Empty<IEdmModel>(), edmxReaderSettings, out _edmModel, out errors))
+                if (!CsdlReader.TryParse(Edmx.CreateReader(ReaderOptions.None), Enumerable.Empty<IEdmModel>(), edmxReaderSettings, out _edmModel, out errors))
                 {
                     throw new InvalidOperationException(errors.FirstOrDefault().ErrorMessage);
                 }
@@ -313,10 +311,10 @@ namespace OData4.Builder
                 _keyAsSegmentContainers = new HashSet<string>();
                 Debug.Assert(EdmModel != null, "this.EdmModel != null");
                 var annotations = EdmModel.VocabularyAnnotations;
-                foreach (var valueAnnotation in annotations.OfType<IEdmValueAnnotation>())
+                foreach (var valueAnnotation in annotations)
                 {
                     var container = valueAnnotation.Target as IEdmEntityContainer;
-                    var valueTerm = valueAnnotation.Term as IEdmValueTerm;
+                    var valueTerm = valueAnnotation.Term;
                     var expression = valueAnnotation.Value as IEdmStringConstantExpression;
                     if (container != null && valueTerm != null && expression != null)
                     {
@@ -482,7 +480,7 @@ namespace OData4.Builder
         private static IEnumerable<T> GetElementsFromModelTree<T>(IEdmModel mainModel, Func<IEdmModel, IEnumerable<T>> getElementFromOneModelFunc)
         {
             var ret = new List<T>();
-            if (mainModel is EdmCoreModel || mainModel.FindDeclaredValueTerm(CoreVocabularyConstants.OptimisticConcurrencyControl) != null)
+            if (mainModel is EdmCoreModel || mainModel.FindDeclaredTerm(CoreVocabularyConstants.OptimisticConcurrency) != null)
             {
                 return ret;
             }
@@ -491,9 +489,9 @@ namespace OData4.Builder
             foreach (var tmp in mainModel.ReferencedModels)
             {
                 if (tmp is EdmCoreModel ||
-                    tmp.FindDeclaredValueTerm(CoreVocabularyConstants.OptimisticConcurrencyControl) != null ||
-                    tmp.FindDeclaredValueTerm(CapabilitiesVocabularyConstants.ChangeTracking) != null ||
-                    tmp.FindDeclaredValueTerm(AlternateKeysVocabularyConstants.AlternateKeys) != null)
+                    tmp.FindDeclaredTerm(CoreVocabularyConstants.OptimisticConcurrency) != null ||
+                    tmp.FindDeclaredTerm(CapabilitiesVocabularyConstants.ChangeTracking) != null ||
+                    tmp.FindDeclaredTerm(AlternateKeysVocabularyConstants.AlternateKeys) != null)
                 {
                     continue;
                 }

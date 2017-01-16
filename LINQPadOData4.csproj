@@ -47,26 +47,20 @@
     <MSBuildCommunityTasksPath>$(SolutionDir)\.build</MSBuildCommunityTasksPath>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="LINQPad, Version=1.0.0.0, Culture=neutral, PublicKeyToken=21353812cd2a2db5, processorArchitecture=MSIL">
-      <HintPath>C:\Program Files (x86)\LINQPad5\LINQPad.exe</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-      <Private>False</Private>
+    <Reference Include="LINQPad">
+      <HintPath>C:\Program Files\LINQPad\LINQPad.exe</HintPath>
     </Reference>
-    <Reference Include="Microsoft.OData.Client, Version=6.15.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>packages\Microsoft.OData.Client.6.15.0\lib\net40\Microsoft.OData.Client.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.OData.Client, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.OData.Client.7.0.0-Nightly20170115\lib\net45\Microsoft.OData.Client.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.OData.Core, Version=6.15.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>packages\Microsoft.OData.Core.6.15.0\lib\portable-net45+win+wpa81\Microsoft.OData.Core.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.OData.Core, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.OData.Core.7.0.0-Nightly20170115\lib\netstandard1.1\Microsoft.OData.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.OData.Edm, Version=6.15.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>packages\Microsoft.OData.Edm.6.15.0\lib\portable-net45+win+wpa81\Microsoft.OData.Edm.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.OData.Edm, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.OData.Edm.7.0.0-Nightly20170115\lib\netstandard1.1\Microsoft.OData.Edm.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Spatial, Version=6.15.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>packages\Microsoft.Spatial.6.15.0\lib\portable-net45+win+wpa81\Microsoft.Spatial.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Microsoft.Spatial, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.Spatial.7.0.0-Nightly20170115\lib\netstandard1.1\Microsoft.Spatial.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.TextTemplating.14.0, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.VisualStudio.TextTemplating.14.0.14.3.25407\lib\net45\Microsoft.VisualStudio.TextTemplating.14.0.dll</HintPath>
@@ -154,11 +148,11 @@
     </ItemGroup>
     <Zip Files="@(ZipFiles)" WorkingDirectory="$(TargetDir)" Flatten="true" ZipFileName="$(TargetDir)OData4DynamicDriver.lpx" />
   </Target>
-  <Import Project="packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets" Condition="Exists('packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets')" />
+  <Import Project="packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets" Condition="Exists('packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\MSBuildTasks.1.5.0.196\build\MSBuildTasks.targets'))" />
+    <Error Condition="!Exists('packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\MSBuildTasks.1.5.0.214\build\MSBuildTasks.targets'))" />
   </Target>
 </Project>

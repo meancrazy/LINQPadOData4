@@ -4,8 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using Microsoft.OData.Edm;
-using Microsoft.OData.Edm.Library;
-using Microsoft.OData.Edm.Values;
+using Microsoft.OData.Edm.Vocabularies;
 
 namespace OData4.Builder
 {
