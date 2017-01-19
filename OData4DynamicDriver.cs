@@ -174,16 +174,21 @@ namespace OData4
             
             dsContext.SendingRequest2 += (s, e) =>
             {
-                executionManager.SqlTranslationWriter.WriteLine($"URL:\t\t{e.RequestMessage.Url}");
+                var writer = executionManager.SqlTranslationWriter;
+
+                if (writer == null) // we in lprun and haven't log writer
+                    return;
+
+                writer.WriteLine($"URL:\t\t{e.RequestMessage.Url}");
                 
                 if (properties.LogMethod)
-                    executionManager.SqlTranslationWriter.WriteLine($"Method:\t{e.RequestMessage.Method}");
+                    writer.WriteLine($"Method:\t{e.RequestMessage.Method}");
 
                 if (properties.LogHeaders)
                 {
-                    executionManager.SqlTranslationWriter.WriteLine("Headers:");
+                    writer.WriteLine("Headers:");
                     var headers = string.Join("\r\n", e.RequestMessage.Headers.Select(o => $"\t{o.Key}:{o.Value}"));
-                    executionManager.SqlTranslationWriter.WriteLine(headers);
+                    writer.WriteLine(headers);
                 }
             };
         }
