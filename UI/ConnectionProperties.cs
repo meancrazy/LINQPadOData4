@@ -63,16 +63,19 @@ namespace OData4.UI
 
         public AuthenticationType AuthenticationType
         {
-            get { return (AuthenticationType?)(int?) _driverData.Element("AuthenticationType") ?? AuthenticationType.None; }
-            set { _driverData.SetElementValue("AuthenticationType", (int)value);}
+            get
+            {
+                return (AuthenticationType?)(int?)_driverData.Element("AuthenticationType") ?? AuthenticationType.None;
+            }
+            set { _driverData.SetElementValue("AuthenticationType", (int)value); }
         }
-        
+
         public bool LogMethod
         {
             get { return (bool?)_driverData.Element("LogMethod") ?? true; }
             set { _driverData.SetElementValue("LogMethod", value.ToString()); }
         }
-        
+
         public bool LogHeaders
         {
             get { return (bool?)_driverData.Element("LogHeaders") ?? true; }
@@ -85,19 +88,19 @@ namespace OData4.UI
             {
                 var element = _driverData.Element("CustomHeaders");
                 if (element == null)
-                    return new KeyValuePair<string,string>[0];
+                    return new KeyValuePair<string, string>[0];
 
                 return element.Elements("Header")
-                              .Select(x => new KeyValuePair<string, string>((string)x.Attribute("Name") ?? "", 
-                                                                            (string)x.Attribute("Value") ?? ""))
-                              .Where(x => !string.IsNullOrWhiteSpace(x.Key));
+                    .Select(x => new KeyValuePair<string, string>((string)x.Attribute("Name") ?? "",
+                        (string)x.Attribute("Value") ?? ""))
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Key));
             }
             set
             {
                 var headers = value?.Where(x => !string.IsNullOrWhiteSpace(x.Key))
-                                    .Select(x => new XElement("Header",
-                                                              new XAttribute("Name", x.Key.Trim()), 
-                                                              new XAttribute("Value", (x.Value ?? "").Trim())));
+                    .Select(x => new XElement("Header",
+                        new XAttribute("Name", x.Key.Trim()),
+                        new XAttribute("Value", (x.Value ?? "").Trim())));
 
                 _driverData.Elements("CustomHeaders").Remove();
                 _driverData.Add(new XElement("CustomHeaders", headers));
@@ -131,7 +134,10 @@ namespace OData4.UI
 
         public IWebProxy GetWebProxy()
         {
-            return UseProxy ? LINQPad.Util.GetWebProxy() : null;
+            if (!UseProxy)
+                return null;
+            
+            return LINQPad.Util.GetWebProxy() ?? WebRequest.GetSystemWebProxy();
         }
 
         public NameValueCollection GetCustomHeaders()

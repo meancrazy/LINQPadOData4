@@ -30,7 +30,8 @@ namespace OData4
                 {
                     Credentials = properties.GetCredentials(),
                     Proxy = properties.GetWebProxy()
-                }
+                },
+                DtdProcessing = DtdProcessing.Parse
             };
 
             using (var reader = XmlReader.Create(uri, settings))

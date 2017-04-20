@@ -152,7 +152,11 @@ namespace OData4.Builder
         /// <summary>
         /// Basic setting for XmlReader.
         /// </summary>
-        private static readonly XmlReaderSettings Settings = new XmlReaderSettings { IgnoreWhitespace = true };
+        private static readonly XmlReaderSettings Settings = new XmlReaderSettings
+        {
+            IgnoreWhitespace = true,
+            DtdProcessing = DtdProcessing.Parse
+        };
 
         /// <summary>
         /// The Wrapper func for user code to overwrite and provide referenced model's stream.
@@ -169,7 +173,6 @@ namespace OData4.Builder
                         {
                             return null;
                         }
-
                         var element = XElement.Load(reader);
                         if (ReferencesMap == null)
                         {
