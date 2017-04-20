@@ -89,7 +89,7 @@ namespace OData4
 
             // Populate the default URI with a demo data:
             if (isNewConnection)
-                connectionProperties.Uri = "http://services.odata.org/V4/OData/OData.svc/";
+                connectionProperties.Uri = "http://services.odata.org/TripPinRESTierService";
 
             return new ConnectionDialog(connectionProperties).ShowDialog() == true;
         }
