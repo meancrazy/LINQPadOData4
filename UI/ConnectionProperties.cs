@@ -134,10 +134,12 @@ namespace OData4.UI
 
         public IWebProxy GetWebProxy()
         {
-            if (!UseProxy)
-                return null;
+            var systemProxy = WebRequest.GetSystemWebProxy();
+
+            if (UseProxy)
+                return LINQPad.Util.GetWebProxy() ?? systemProxy;
             
-            return LINQPad.Util.GetWebProxy() ?? WebRequest.GetSystemWebProxy();
+            return systemProxy;
         }
 
         public NameValueCollection GetCustomHeaders()
