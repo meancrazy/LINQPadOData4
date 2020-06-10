@@ -1,0 +1,77 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+	<PropertyGroup>
+		<TargetFramework>netcoreapp3.1</TargetFramework>
+		<UseWpf>true</UseWpf>
+		<AssemblyName>OData4.LINQPadDriver</AssemblyName>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageTags>linqpaddriver</PackageTags>
+		<LangVersion>8.0</LangVersion>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<AssemblyTitle>OData4.LINQPadDriver</AssemblyTitle>
+		<Description>Simple OData v4 LINQPad dynamic driver.</Description>
+		<Company>Dmitrii Smirnov</Company>
+		<Product>OData v4 Driver</Product>
+		<Title>OData v4 Driver</Title>
+		<Copyright>Copyright © Dmitrii Smirnov</Copyright>
+		<Version>2.0.0</Version>
+		<AssemblyVersion>2.0.0.0</AssemblyVersion>
+		<FileVersion>2.0.0.0</FileVersion>
+		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+		<PackageProjectUrl>https://github.com/meancrazy/LINQPadOData4</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/meancrazy/LINQPadOData4.git</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<Authors>Dmitrii Smirnov</Authors>
+		<IncludeSymbols>True</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="LICENSE.md">
+			<Pack>true</Pack>
+			<PackagePath></PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="LINQPad.Reference" Version="1.*" />
+		<PackageReference Include="Microsoft.OData.Client" Version="7.6.4" />
+		<PackageReference Include="Microsoft.VisualStudio.TextTemplating.15.0" Version="16.6.30107.105" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.7.0-1.final" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="ConnectionDialog.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</None>
+
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="Templates\ODataT4CodeGenerator.tt">
+			<Generator>TextTemplatingFilePreprocessor</Generator>
+			<LastGenOutput>ODataT4CodeGenerator.cs</LastGenOutput>
+		</None>
+		<Compile Update="Templates\ODataT4CodeGenerator.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>ODataT4CodeGenerator.tt</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Properties\" />
+	</ItemGroup>
+
+	<Target Name="PostBuild1" AfterTargets="PostBuildEvent">
+		<Exec
+			Command="xcopy /i/y/s &quot;$(TargetDir)*.*&quot; &quot;%25LocalAppData%25\\LINQPad\\Drivers\\DataContext\\NetCore\\$(TargetName)&quot;" />
+	</Target>
+
+</Project>
