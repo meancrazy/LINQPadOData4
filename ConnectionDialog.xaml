@@ -71,6 +71,9 @@
 					<StackPanel>
 						<CheckBox Margin="6,4,0,0" IsChecked="{Binding LogMethod}" TabIndex="11">Method</CheckBox>
 						<CheckBox Margin="6,4,0,0" IsChecked="{Binding LogHeaders}" TabIndex="12">Headers</CheckBox>
+						<Label TabIndex="10">
+							<Hyperlink Click="Hyperlink_Click">Custom Headers...</Hyperlink>
+						</Label>
 					</StackPanel>
 				</GroupBox>
 			</StackPanel>
