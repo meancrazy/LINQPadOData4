@@ -32,14 +32,17 @@ namespace OData4.LINQPadDriver
 		{
 			try
 			{
-				CustomHeadersDialog customHeadersDialog = new CustomHeadersDialog();
-				customHeadersDialog.ShowDialog();
-				var customeHeaders = new List<KeyValuePair<string, string>>();
-				foreach (var item in customHeadersDialog.CustomHeaders.Where(s => !string.IsNullOrEmpty(s.Name)))
+				CustomHeadersDialog customHeadersDialog = new CustomHeadersDialog(_connectionProperties.CustomHeaders);
+				var dialogResult = customHeadersDialog.ShowDialog();
+				if (dialogResult == true)
 				{
-					customeHeaders.Add(new KeyValuePair<string, string>(item.Name, item.Value));
+					var customeHeaders = new List<KeyValuePair<string, string>>();
+					foreach (var item in customHeadersDialog.CustomHeaders.Where(s => !string.IsNullOrEmpty(s.Name)))
+					{
+						customeHeaders.Add(new KeyValuePair<string, string>(item.Name, item.Value));
+					}
+					_connectionProperties.CustomHeaders = customeHeaders;
 				}
-				_connectionProperties.CustomHeaders = customeHeaders;
 			}
 			catch (Exception ex)
 			{

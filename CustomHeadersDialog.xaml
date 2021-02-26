@@ -12,13 +12,14 @@
         ResizeMode="NoResize"
         Title="CustomHeaders" >
 	<StackPanel Orientation="Vertical" Margin="4" >
-		<DataGrid AutoGenerateColumns="False" MinHeight="200" ItemsSource="{Binding CustomHeaders}">
+		<DataGrid AutoGenerateColumns="False" MinHeight="200" ItemsSource="{Binding CustomHeaders}" SelectedItem="{Binding SelectedCustomHeader}">
 			<DataGrid.Columns>
 				<DataGridTextColumn Width="*" Header="Name" Binding="{Binding Name}"/>
 				<DataGridTextColumn Width="*" Header="Value" Binding="{Binding Value}"/>
 			</DataGrid.Columns>
 		</DataGrid>
-		<DockPanel >
+		<DockPanel Margin="0,5,0,0">
+			<Button  Padding="4" Content="Remove selected"    DockPanel.Dock="Left" Click="Remove_Click" />
 			<Button  Padding="4" Content="Cancel"  Margin="4 0 0 0" Width="60" DockPanel.Dock="Right" Click="Cancel_Click" />
 			<Button Padding="4"  Width="60" Margin="0,0,4,0" Click="OK_Click" Content="OK" DockPanel.Dock="Right"/>
 			<Grid/>
