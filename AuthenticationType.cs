@@ -1,4 +1,4 @@
-namespace OData4.LINQPadDriver
+﻿namespace OData4.LINQPadDriver
 {
 	public enum AuthenticationType
 	{
@@ -6,5 +6,6 @@ namespace OData4.LINQPadDriver
 		Windows = 1,
 		Basic = 2,
 		ClientCertificate = 3,
+		AzureAD = 4,
 	}
 }

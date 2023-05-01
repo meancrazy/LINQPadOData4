@@ -1,4 +1,4 @@
-using LINQPad.Extensibility.DataContext;
+﻿using LINQPad.Extensibility.DataContext;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -17,6 +17,7 @@ namespace OData4.LINQPadDriver
 		{
 			_connectionInfo = connectionInfo;
 			_driverData = connectionInfo.DriverData;
+			RedirectUri = "urn:ietf:wg:oauth:2.0:oob";//default
 		}
 
 		public bool Persist
@@ -110,23 +111,42 @@ namespace OData4.LINQPadDriver
 			set => _driverData.SetElementValue("ClientCertificateFile", value);
 		}
 
+
+		public string Authority
+		{
+			get { return (string)_driverData.Element("Authority"); }
+			set { _driverData.SetElementValue("Authority", value); }
+		}
+
+		public string ApplicationId
+		{
+			get { return (string)_driverData.Element("ApplicationId"); }
+			set { _driverData.SetElementValue("ApplicationId", value); }
+		}
+		public string Scopes
+		{
+			get { return (string)_driverData.Element("Scopes"); }
+			set { _driverData.SetElementValue("Scopes", value); }
+		}
+		public string RedirectUri
+		{
+			get { return (string)_driverData.Element("RedirectUri"); }
+			set { _driverData.SetElementValue("RedirectUri", value); }
+		}
+
 		public ICredentials GetCredentials()
 		{
-			switch (AuthenticationType)
+			return AuthenticationType switch
 			{
-				case AuthenticationType.None:
-					return null;
-				case AuthenticationType.Windows:
-					return CredentialCache.DefaultCredentials;
-				case AuthenticationType.Basic:
-					return !string.IsNullOrEmpty(UserName)
-						? new NetworkCredential(UserName, Password, Domain ?? string.Empty)
-						: CredentialCache.DefaultNetworkCredentials;
-				case AuthenticationType.ClientCertificate:
-					return null;
-				default:
-					throw new ArgumentOutOfRangeException();
-			}
+				AuthenticationType.None => null,
+				AuthenticationType.Windows => CredentialCache.DefaultCredentials,
+				AuthenticationType.Basic => !string.IsNullOrEmpty(UserName)
+										? new NetworkCredential(UserName, Password, Domain ?? string.Empty)
+										: CredentialCache.DefaultNetworkCredentials,
+				AuthenticationType.ClientCertificate => null,
+				AuthenticationType.AzureAD => null,
+				_ => throw new NotImplementedException()
+			};
 		}
 
 		public IWebProxy GetWebProxy()
