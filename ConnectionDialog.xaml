@@ -34,6 +34,35 @@
 					<Label Content="Certificate file:" />
 					<TextBox Text="{Binding ClientCertificateFile}" HorizontalAlignment="Stretch" Width="190" />
 				</StackPanel>
+
+				<RadioButton Margin="0 0 0 4" IsChecked="{Binding Path=AuthenticationType, Converter={StaticResource EnumToBooleanConverter}, ConverterParameter={x:Static ui:AuthenticationType.AzureAD}}" TabIndex="5" x:Name="AzureAD">_AzureAD</RadioButton>
+				<StackPanel Margin="40,4,21,4" Orientation="Vertical">
+					<StackPanel.Style>
+						<Style TargetType="StackPanel">
+							<Style.Triggers>
+								<DataTrigger Binding="{Binding IsChecked, ElementName=AzureAD}" Value="False">
+									<Setter Property="Visibility" Value="Collapsed" />
+								</DataTrigger>
+							</Style.Triggers>
+						</Style>
+					</StackPanel.Style>
+					<StackPanel Orientation="Horizontal">
+						<Label Content="AuthorityId:" />
+						<TextBox Text="{Binding Authority}" Width="270"  />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal">
+						<Label Content="ApplicationId:" />
+						<TextBox Text="{Binding ApplicationId}" HorizontalAlignment="Stretch" Width="259" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal">
+						<Label Content="Scopes(CommaSeparated):" />
+						<TextBox Text="{Binding Scopes}" HorizontalAlignment="Stretch" Width="190" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal">
+						<Label Content="RedirectUri:" />
+						<TextBox Text="{Binding RedirectUri}" HorizontalAlignment="Stretch" Width="271" />
+					</StackPanel>
+				</StackPanel>
 				<Grid Margin="40 4 100 4">
 					<Grid.Style>
 						<Style TargetType="Grid">

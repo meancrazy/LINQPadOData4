@@ -24,6 +24,9 @@ namespace OData4.LINQPadDriver
 			"Microsoft.OData.Core.dll",
 			"Microsoft.OData.Edm.dll",
 			"Microsoft.Spatial.dll",
+			"Azure.Identity.dll",
+			"Azure.Core.dll",
+			"System.Windows.Interactivity.dll",
 		};
 
 		private List<string> _namespaces;
@@ -68,6 +71,8 @@ namespace OData4.LINQPadDriver
 				var namespaces = model.DeclaredNamespaces.Select(o => BaseNamespacePrefix + "." + o).ToList();
 				_namespaces = namespaces.Count > 1 ? namespaces.ToList() : new List<string>(1);
 				_namespaces.Add("Microsoft.OData.Client");
+				_namespaces.Add("Azure.Identity");
+				_namespaces.Add("Azure.Core");
 			}
 
 			return _namespaces;
